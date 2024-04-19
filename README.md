@@ -1,5 +1,6 @@
 # recommend-quickstart
 
+```
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -34,6 +35,7 @@ def recommend(user_index, ratings, item_similarity, top_n=3):
 # 对第一个用户进行推荐
 recommended_items = recommend(0, ratings, item_similarity)
 print("推荐给用户0的物品索引:", recommended_items)
+```
 
 -----
 
@@ -78,3 +80,61 @@ Citations:
 [17] https://www.cnblogs.com/eilearn/p/9972243.html
 [18] https://www.nvidia.cn/glossary/data-science/recommendation-system/
 [19] https://developer.aliyun.com/article/763945
+
+
+-------
+
+基于内容的过滤（Content-Based Filtering, CBF）推荐系统的核心思想是利用物品的特征信息来推荐用户可能喜欢的物品。以下是一个简单的基于内容的推荐系统的Python例子，它可以在Google Colab上运行。
+
+```python
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import linear_kernel
+
+# 示例数据：物品的描述
+items = {
+    'Item1': 'Horror movie scary ghost',
+    'Item2': 'Thriller movie suspense',
+    'Item3': 'Adventure movie outdoor action',
+    'Item4': 'Comedy movie funny laugh',
+    'Item5': 'Drama movie serious performance',
+}
+
+# 用户喜好的物品描述
+user_likes = 'Horror ghost thriller suspense'
+
+# 使用TF-IDF向量化器将文本转换为向量
+tfidf = TfidfVectorizer(stop_words='english')
+tfidf_matrix = tfidf.fit_transform(items.values())
+
+# 将用户喜好也转换为向量
+user_likes_vector = tfidf.transform([user_likes])
+
+# 计算物品之间的余弦相似度
+cosine_similarities = linear_kernel(user_likes_vector, tfidf_matrix).flatten()
+
+# 获取相似度最高的物品的索引
+top_item_index = cosine_similarities.argsort()[-2::-1]
+
+# 输出推荐的物品
+print("根据用户喜好推荐的物品:")
+for index in top_item_index:
+    print(list(items.keys())[index], '-', list(items.values())[index])
+```
+
+### 代码解释：
+1. **数据准备**：定义一个包含物品描述的字典`items`，以及一个表示用户喜好的字符串`user_likes`。
+2. **TF-IDF向量化**：使用`TfidfVectorizer`将物品描述转换为TF-IDF特征向量。这个过程可以提取文本中的关键信息，并将其转换为数值型特征，以便进行计算。
+3. **计算相似度**：使用`linear_kernel`计算用户喜好向量与每个物品向量之间的余弦相似度。余弦相似度是一种衡量两个向量在方向上的相似程度的方法，常用于文本相似度计算。
+4. **推荐物品**：根据相似度排序，选择相似度最高的物品作为推荐。这里我们排除了最后一个元素，因为它是用户喜好本身。
+
+这个简单的CBF推荐系统可以直接在Google Colab中运行，不需要额外安装库，适合作为基于内容推荐的入门示例。
+
+Citations:
+[1] https://github.com/7hang/cyber-security-interview
+[2] https://juejin.cn/s/python%20%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%20%E5%8D%8F%E5%90%8C%E8%BF%87%E6%BB%A4
+[3] https://juejin.cn/post/6844903912705622030
+[4] https://github.com/ictar/python-doc/blob/master/Science%20and%20Data%20Analysis/Python%E4%B8%AD%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84%E5%9F%BA%E4%BA%8E%E5%86%85%E5%AE%B9%E7%9A%84%E6%8E%A8%E8%8D%90%E5%BC%95%E6%93%8E.md
+[5] https://github.com/fcitx/fcitx-table-data/blob/master/erbi.txt
+[6] https://blog.csdn.net/m0_62554628/article/details/134574807
+[7] https://blog.csdn.net/qq_29762941/article/details/93001289

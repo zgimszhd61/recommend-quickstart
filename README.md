@@ -263,3 +263,83 @@ Citations:
 [13] https://ieeexplore.ieee.org/document/9404101
 [14] https://dergipark.org.tr/tr/download/article-file/2728602
 
+
+-----------
+
+为了融合用户评分反馈因素，并对未评分的新闻进行预测，我们需要对之前的代码进行进一步的改进。这次我们将扩充新闻样本到10条，并且只对用户未评分的新闻进行预测，推荐那些预测用户最可能喜欢的新闻。以下是修改后的代码示例，可以在Google Colab上运行：
+
+```python
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import linear_kernel
+import jieba  # 导入jieba中文分词库
+
+# 示例数据：新闻的标题和短内容（中文），扩充到10条
+news = {
+    'News1': '美国总统访问中国，外交关系紧张。',
+    'News2': '人工智能技术突破，新一代AI模型发布。',
+    'News3': 'NBA季后赛火热进行，球星表现抢眼。',
+    'News4': '知名歌手发行新专辑，粉丝热情高涨。',
+    'News5': '股市大跌，投资者情绪不稳。',
+    'News6': '国际油价上涨，经济形势复杂。',
+    'News7': '本地教育改革，学生家长意见大。',
+    'News8': '新款电动汽车发布，续航里程刷新纪录。',
+    'News9': '国际旅游业开始复苏，旅客数量激增。',
+    'News10': '全球气候变暖，极端天气频发。'
+}
+
+# 用户评分反馈：喜欢(1)、未评分(0)、不喜欢(-1)
+user_feedback = {
+    'News1': -1,
+    'News2': 1,
+    'News3': 0,
+    'News4': 1,
+    'News5': -1,
+    'News6': 0,
+    'News7': 0,
+    'News8': 1,
+    'News9': 0,
+    'News10': -1
+}
+
+# 使用jieba进行中文分词
+def chinese_tokenizer(text):
+    return jieba.lcut(text)
+
+# 使用TF-IDF向量化器将文本转换为向量，指定分词函数为jieba分词
+tfidf = TfidfVectorizer(tokenizer=chinese_tokenizer, stop_words=['的', '是', '和', '在'])
+tfidf_matrix = tfidf.fit_transform(news.values())
+
+# 构建用户喜好向量，考虑用户反馈
+user_profile = np.zeros(tfidf_matrix.shape[1])
+for news_id, feedback in user_feedback.items():
+    if feedback != 0:  # 只考虑用户已评分的新闻
+        user_profile += feedback * tfidf_matrix[list(news.keys()).index(news_id)].toarray().flatten()
+
+# 计算新闻之间的余弦相似度
+cosine_similarities = linear_kernel(user_profile.reshape(1, -1), tfidf_matrix).flatten()
+
+# 获取未评分新闻的索引
+unrated_news_indices = [index for index, news_id in enumerate(news) if user_feedback[news_id] == 0]
+
+# 获取未评分新闻的相似度
+unrated_news_similarities = cosine_similarities[unrated_news_indices]
+
+# 获取相似度最高的未评分新闻的索引
+top_unrated_news_index = np.argsort(unrated_news_similarities)[-3:][::-1]  # 推荐相似度最高的三条未评分新闻
+
+# 输出推荐的未评分新闻
+print("根据用户喜好推荐的未评分新闻:")
+for index in top_unrated_news_index:
+    news_index = unrated_news_indices[index]
+    print(list(news.keys())[news_index], '-', list(news.values())[news_index])
+```
+
+### 代码调整说明：
+1. **扩充新闻样本**：新闻数据现在包括10条新闻的标题和简短内容。
+2. **用户评分反馈**：用户对每条新闻的评分反馈被更新，包括喜欢、未评分和不喜欢。
+3. **构建用户喜好向量**：根据用户的评分反馈和新闻的TF-IDF向量，构建一个代表用户喜好的向量。
+4. **预测未评分新闻**：计算用户喜好向量与所有新闻向量之间的余弦相似度，然后只针对用户未评分的新闻进行预测。
+5. **推荐逻辑**：从未评分的新闻中选择预测相似度最高的几条新闻作为推荐。
+
+这个修改后的代码能够有效地融合用户的评分反馈，并对未评分的新闻进行预测，推荐那些用户最可能喜欢的新闻。

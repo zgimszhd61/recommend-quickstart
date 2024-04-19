@@ -191,3 +191,75 @@ for index in top_item_index:
 4. **推荐物品**：根据相似度排序，选择相似度最高的物品作为推荐。
 
 这个修改后的代码支持中文文本处理，并且可以在Google Colab中直接运行，适合用于中文内容的基于内容的推荐系统示例。
+
+
+-------
+
+为了适应主要由100字以内短文组成的新闻个性化推荐系统，我们需要对之前的基于内容的推荐系统代码进行一些调整。这些调整主要是为了更好地处理短文本的特性，并提高推荐的准确性和相关性。以下是修改后的代码示例，可以在Google Colab上运行：
+
+```python
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import linear_kernel
+import jieba  # 导入jieba中文分词库
+
+# 示例数据：新闻的标题和短内容（中文）
+news = {
+    'News1': '美国总统访问中国，外交关系紧张。',
+    'News2': '人工智能技术突破，新一代AI模型发布。',
+    'News3': 'NBA季后赛火热进行，球星表现抢眼。',
+    'News4': '知名歌手发行新专辑，粉丝热情高涨。',
+    'News5': '股市大跌，投资者情绪不稳。',
+}
+
+# 用户喜好的新闻描述（中文）
+user_likes = '科技突破，AI发展'
+
+# 使用jieba进行中文分词
+def chinese_tokenizer(text):
+    return jieba.lcut(text)
+
+# 使用TF-IDF向量化器将文本转换为向量，指定分词函数为jieba分词
+tfidf = TfidfVectorizer(tokenizer=chinese_tokenizer, stop_words=['的', '是', '和', '在'])
+tfidf_matrix = tfidf.fit_transform(news.values())
+
+# 将用户喜好也转换为向量
+user_likes_vector = tfidf.transform([user_likes])
+
+# 计算新闻之间的余弦相似度
+cosine_similarities = linear_kernel(user_likes_vector, tfidf_matrix).flatten()
+
+# 获取相似度最高的新闻的索引
+top_news_index = cosine_similarities.argsort()[-2::-1]
+
+# 输出推荐的新闻
+print("根据用户喜好推荐的新闻:")
+for index in top_news_index:
+    print(list(news.keys())[index], '-', list(news.values())[index])
+```
+
+### 代码调整说明：
+1. **数据准备**：新闻数据现在包括标题和100字以内的简短内容。这要求我们在处理时更加注重文本的关键信息提取。
+2. **中文分词**：使用`jieba`库进行中文分词，这对于中文文本处理至关重要，尤其是在短文本中，每个词的权重更加明显。
+3. **TF-IDF向量化**：在`TfidfVectorizer`中指定`tokenizer`参数为`chinese_tokenizer`，并设置适当的停用词，以提高分析的准确性。对于短文本，正确的停用词设置尤其重要，因为无关词汇可能会对结果产生较大影响。
+4. **余弦相似度计算**：计算用户喜好向量与各个新闻向量之间的余弦相似度，以评估内容的相关性。
+5. **推荐新闻**：根据相似度排序，选择相似度最高的新闻作为推荐。
+
+这个修改后的代码适用于处理包含标题和简短内容的中文新闻推荐，可以直接在Google Colab中运行，适合用于短文本新闻的个性化推荐系统示例。
+
+Citations:
+[1] https://arxiv.org/pdf/2106.08934.pdf
+[2] https://www.mdpi.com/2078-2489/14/2/60
+[3] https://link.springer.com/article/10.1007/s41019-023-00228-5
+[4] https://dl.acm.org/doi/10.1145/3584946
+[5] https://www.mdpi.com/2673-6470/4/1/3
+[6] https://paperswithcode.com/task/news-recommendation
+[7] https://mobidev.biz/blog/how-to-build-text-based-recommender-system-with-nlp
+[8] https://aclanthology.org/P19-1033
+[9] https://arxiv.org/pdf/2104.07413.pdf
+[10] http://www.sjisr.org/download/sjisr-4-4-473-484.pdf
+[11] https://milvus.io/blog/building-an-intelligent-news-recommendation-system-inside-sohu-news-app.md
+[12] https://dl.acm.org/doi/abs/10.1145/3404835.3463069
+[13] https://ieeexplore.ieee.org/document/9404101
+[14] https://dergipark.org.tr/tr/download/article-file/2728602
+

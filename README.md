@@ -138,3 +138,56 @@ Citations:
 [5] https://github.com/fcitx/fcitx-table-data/blob/master/erbi.txt
 [6] https://blog.csdn.net/m0_62554628/article/details/134574807
 [7] https://blog.csdn.net/qq_29762941/article/details/93001289
+
+-------
+
+为了使上述基于内容的推荐系统支持中文，并且适应协同推荐的场景，我们需要对代码进行一些调整。这包括使用适合中文的分词工具来处理文本数据，以及调整数据结构以适应协同推荐的需求。以下是修改后的代码，它可以在Google Colab上运行：
+
+```python
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import linear_kernel
+import jieba  # 导入jieba中文分词库
+
+# 示例数据：物品的描述（中文）
+items = {
+    'Item1': '恐怖电影 鬼魂',
+    'Item2': '惊悚电影 悬疑',
+    'Item3': '冒险电影 户外 动作',
+    'Item4': '喜剧电影 搞笑',
+    'Item5': '剧情电影 严肃 表演',
+}
+
+# 用户喜好的物品描述（中文）
+user_likes = '恐怖 鬼魂 惊悚 悬疑'
+
+# 使用jieba进行中文分词
+def chinese_tokenizer(text):
+    return jieba.lcut(text)
+
+# 使用TF-IDF向量化器将文本转换为向量，指定分词函数为jieba分词
+tfidf = TfidfVectorizer(tokenizer=chinese_tokenizer, stop_words=['的', '是', '和', '在'])
+tfidf_matrix = tfidf.fit_transform(items.values())
+
+# 将用户喜好也转换为向量
+user_likes_vector = tfidf.transform([user_likes])
+
+# 计算物品之间的余弦相似度
+cosine_similarities = linear_kernel(user_likes_vector, tfidf_matrix).flatten()
+
+# 获取相似度最高的物品的索引
+top_item_index = cosine_similarities.argsort()[-2::-1]
+
+# 输出推荐的物品
+print("根据用户喜好推荐的物品:")
+for index in top_item_index:
+    print(list(items.keys())[index], '-', list(items.values())[index])
+```
+
+### 代码解释：
+1. **中文分词**：使用`jieba`库进行中文分词。由于中文文本不像英文那样有明显的单词分隔符，因此需要使用分词工具来将句子切分成词语。
+2. **TF-IDF向量化**：在`TfidfVectorizer`中指定`tokenizer`参数为`chinese_tokenizer`，这是一个使用`jieba`分词的函数。同时，指定一些常见的停用词以提高分析的准确性。
+3. **余弦相似度计算**：与之前相同，计算用户喜好向量与各个物品向量之间的余弦相似度。
+4. **推荐物品**：根据相似度排序，选择相似度最高的物品作为推荐。
+
+这个修改后的代码支持中文文本处理，并且可以在Google Colab中直接运行，适合用于中文内容的基于内容的推荐系统示例。

@@ -343,3 +343,92 @@ for index in top_unrated_news_index:
 5. **推荐逻辑**：从未评分的新闻中选择预测相似度最高的几条新闻作为推荐。
 
 这个修改后的代码能够有效地融合用户的评分反馈，并对未评分的新闻进行预测，推荐那些用户最可能喜欢的新闻。
+
+
+-----------
+
+评估协同推荐系统的效果通常涉及多个标准，主要包括以下几种：
+
+1. **准确率（Accuracy）**：通常通过计算预测评分和实际评分之间的误差来衡量，常用的指标包括均方误差（MSE）和均方根误差（RMSE）。
+
+2. **精确度（Precision）和召回率（Recall）**：
+   - **精确度**：推荐系统推荐的项中，用户实际喜欢的比例。
+   - **召回率**：用户实际喜欢的项中，被推荐系统推荐出来的比例。
+
+3. **F1分数**：精确度和召回率的调和平均，是一个综合考虑精确度和召回率的指标。
+
+4. **覆盖率（Coverage）**：推荐系统能够推荐出多少比例的物品。
+
+5. **多样性（Diversity）**：推荐列表中物品之间的不相似度。
+
+为了在上述代码中加入评估模块，我们可以假设有一组用户的实际喜好数据用于测试。以下是更新后的代码，包括一个简单的评估模块来计算精确度和召回率：
+
+```python
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import linear_kernel
+import jieba
+
+# 示例数据和用户反馈
+news = {
+    'News1': '美国总统访问中国，外交关系紧张。',
+    'News2': '人工智能技术突破，新一代AI模型发布。',
+    'News3': 'NBA季后赛火热进行，球星表现抢眼。',
+    'News4': '知名歌手发行新专辑，粉丝热情高涨。',
+    'News5': '股市大跌，投资者情绪不稳。',
+    'News6': '国际油价上涨，经济形势复杂。',
+    'News7': '本地教育改革，学生家长意见大。',
+    'News8': '新款电动汽车发布，续航里程刷新纪录。',
+    'News9': '国际旅游业开始复苏，旅客数量激增。',
+    'News10': '全球气候变暖，极端天气频发。'
+}
+
+user_feedback = {
+    'News1': -1,
+    'News2': 1,
+    'News3': 0,
+    'News4': 1,
+    'News5': -1,
+    'News6': 0,
+    'News7': 0,
+    'News8': 1,
+    'News9': 0,
+    'News10': -1
+}
+
+# 假设的用户实际喜好（用于评估）
+actual_likes = ['News2', 'News4', 'News8', 'News9']
+
+# 分词和TF-IDF向量化
+def chinese_tokenizer(text):
+    return jieba.lcut(text)
+
+tfidf = TfidfVectorizer(tokenizer=chinese_tokenizer, stop_words=['的', '是', '和', '在'])
+tfidf_matrix = tfidf.fit_transform(news.values())
+
+# 构建用户喜好向量
+user_profile = np.zeros(tfidf_matrix.shape[1])
+for news_id, feedback in user_feedback.items():
+    if feedback != 0:
+        user_profile += feedback * tfidf_matrix[list(news.keys()).index(news_id)].toarray().flatten()
+
+# 计算相似度并推荐
+cosine_similarities = linear_kernel(user_profile.reshape(1, -1), tfidf_matrix).flatten()
+recommended_indices = cosine_similarities.argsort()[-3:][::-1]
+recommended_news = [list(news.keys())[i] for i in recommended_indices]
+
+# 评估模块
+def evaluate(recommended, actual):
+    recommended_set = set(recommended)
+    actual_set = set(actual)
+    precision = len(recommended_set & actual_set) / len(recommended_set)
+    recall = len(recommended_set & actual_set) / len(actual_set)
+    return precision, recall
+
+precision, recall = evaluate(recommended_news, actual_likes)
+print("推荐的新闻:", recommended_news)
+print("精确度:", precision)
+print("召回率:", recall)
+```
+
+这段代码首先定义了一个假设的用户实际喜好列表`actual_likes`，用于评估推荐系统的精确度和召回率。然后，它计算了推荐新闻与实际喜好之间的精确度和召回率，这可以帮助我们了解推荐系统的效果。
